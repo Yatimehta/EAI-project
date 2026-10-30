@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkEase | Smart Parking System</title>
+  <meta name="description" content="ParkEase is an intelligent real-time parking navigation system featuring dynamic space detection, A* lane routing, and automated spot allocation.">
+  
+  <!-- Typography: Inter for clean UI & JetBrains Mono for telemetry -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app" class="app-layout">
+    
+    <!-- Header: Navigation & Real-time Facility Stats -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <svg class="logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="7" fill="#1e293b"/>
+            <path d="M10 23V9H16.2C18.6 9 20.5 10.8 20.5 13.2C20.5 15.6 18.6 17.4 16.2 17.4H13.5V23H10Z" fill="#38bdf8"/>
+            <circle cx="22" cy="10" r="2.5" fill="#10b981"/>
+          </svg>
+          <div class="brand-text">
+            <div class="brand-title">
+              <span class="brand-name">ParkEase</span>
+              <span class="facility-tag">Facility OS</span>
+            </div>
+            <span class="brand-subtitle">Smart Parking & Guidance System</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Facility Capacity & Occupancy -->
+      <div class="header-stats" id="global-stats">
+        <div class="stat-pill" title="Total facility capacity">
+          <span class="stat-label">TOTAL SPOTS</span>
+          <span class="stat-value" id="stat-total">62</span>
+        </div>
+        <div class="stat-pill stat-avail" title="Currently open spots">
+          <span class="status-indicator ind-avail"></span>
+          <span class="stat-label">AVAILABLE</span>
+          <span class="stat-value" id="stat-available">--</span>
+        </div>
+        <div class="stat-pill stat-occ" title="Currently occupied spots">
+          <span class="status-indicator ind-occ"></span>
+          <span class="stat-label">OCCUPIED</span>
+          <span class="stat-value" id="stat-occupied">--</span>
+        </div>
+        <div class="stat-pill stat-res" title="Currently reserved spots">
+          <span class="status-indicator ind-res"></span>
+          <span class="stat-label">RESERVED</span>
+          <span class="stat-value" id="stat-reserved">0</span>
+        </div>
+        
+        <!-- Occupancy Gauge -->
+        <div class="occupancy-widget" title="Current facility occupancy percentage">
+          <div class="occ-ring-wrap">
+            <svg class="occ-ring" viewBox="0 0 36 36">
+              <path class="occ-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path id="occ-ring-val" class="occ-ring-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <span class="occ-percent-text" id="stat-percent">0%</span>
+          </div>
+          <span class="occ-label">OCCUPANCY</span>
+        </div>
+      </div>
+
+      <!-- Utilities: Live Status, Audio & Theme Switch -->
+      <div class="header-actions">
+        <div class="telemetry-badge" title="IoT sensors active">
+          <span class="status-indicator ind-avail"></span>
+          <span class="badge-text">Sensors Live</span>
+        </div>
+
+        <button id="btn-audio-toggle" class="utility-btn" title="Toggle audio feedback" aria-label="Toggle Audio">
+          <svg class="icon-svg icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg class="icon-svg icon-sound-off hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
+        <button id="btn-theme-toggle" class="utility-btn" title="Toggle dark/light theme" aria-label="Toggle Theme">
+          <svg class="icon-svg icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg class="icon-svg icon-sun hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="main-workspace">
+      
+      <!-- LEFT SIDEBAR: Search Preferences & Simulation Controls -->
+      <aside class="sidebar sidebar-left">
+        <!-- Spot Search Panel -->
+        <div class="panel-card" id="ai-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Find a Parking Spot</h2>
+            <span class="panel-subtitle">Multi-objective destination routing</span>
+          </div>
+
+          <div class="panel-body">
+            <!-- Form Group: Destination -->
+            <div class="form-group">
+              <label class="form-label" for="select-destination">
+                <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                </svg>
+                Destination
+              </label>
+              <div class="select-container">
+                <select id="select-destination" class="form-select">
+                  <option value="main_entrance" selected>Building Main Entrance (Plaza Lobby)</option>
+                  <option value="elevator">West Elevator & Stairs Core</option>
+                  <option value="mall_gate">East Mall & Retail Concourse</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Form Group: Vehicle Type -->
+            <div class="form-group">
+              <label class="form-label">
+                <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="11" rx="2"></rect>
+                  <circle cx="7" cy="18" r="2"></circle>
+                  <circle cx="17" cy="18" r="2"></circle>
+                  <line x1="6" y1="11" x2="18" y2="11"></line>
+                </svg>
+                Vehicle Category
+              </label>
+              <div class="vehicle-type-grid" id="vehicle-type-selector">
+                <button type="button" class="vehicle-btn active" data-type="regular">
+                  <svg class="v-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.5l1.5-3h8l1.5 3H19a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M5 17a2 2 0 1 0 4 0m6 0a2 2 0 1 0 4 0"></path>
+                  </svg>
+                  <span class="v-name">Standard</span>
+                </button>
+                <button type="button" class="vehicle-btn" data-type="ev">
+                  <svg class="v-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  <span class="v-name">EV Charging</span>
+                </button>
+                <button type="button" class="vehicle-btn" data-type="disabled">
+                  <svg class="v-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="4" r="2"></circle>
+                    <path d="M7 11h6v4l3 5"></path>
+                    <path d="M11 21a5 5 0 1 1 0-10"></path>
+                  </svg>
+                  <span class="v-name">Accessible</span>
+                </button>
+                <button type="button" class="vehicle-btn" data-type="compact">
+                  <svg class="v-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="6" width="16" height="12" rx="3"></rect>
+                    <circle cx="8" cy="18" r="2"></circle>
+                    <circle cx="16" cy="18" r="2"></circle>
+                  </svg>
+                  <span class="v-name">Compact</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Form Group: Preference Sliders -->
+            <div class="form-group sliders-group">
+              <div class="group-header">
+                <span class="form-label">
+                  <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                  </svg>
+                  Routing Priorities
+                </span>
+                <button type="button" id="btn-reset-weights" class="text-link-btn">Reset</button>
+              </div>
+
+              <!-- Slider 1: Walking Distance -->
+              <div class="slider-row">
+                <div class="slider-info">
+                  <span class="slider-name">Shorter Walk</span>
+                  <span class="slider-val" id="val-weight-walk">80%</span>
+                </div>
+                <input type="range" id="slider-weight-walk" min="0" max="100" value="80" class="custom-slider">
+              </div>
+
+              <!-- Slider 2: Congestion -->
+              <div class="slider-row">
+                <div class="slider-info">
+                  <span class="slider-name">Low Traffic / Easy Parking</span>
+                  <span class="slider-val" id="val-weight-congestion">60%</span>
+                </div>
+                <input type="range" id="slider-weight-congestion" min="0" max="100" value="60" class="custom-slider">
+              </div>
+
+              <!-- Slider 3: Exit Proximity -->
+              <div class="slider-row">
+                <div class="slider-info">
+                  <span class="slider-name">Quick Exit Proximity</span>
+                  <span class="slider-val" id="val-weight-exit">40%</span>
+                </div>
+                <input type="range" id="slider-weight-exit" min="0" max="100" value="40" class="custom-slider">
+              </div>
+
+              <!-- Slider 4: Drive Distance -->
+              <div class="slider-row">
+                <div class="slider-info">
+                  <span class="slider-name">Min. Driving Distance</span>
+                  <span class="slider-val" id="val-weight-drive">50%</span>
+                </div>
+                <input type="range" id="slider-weight-drive" min="0" max="100" value="50" class="custom-slider">
+              </div>
+            </div>
+
+            <!-- Action: Find Best Spot Button -->
+            <button id="btn-find-spot" class="primary-action-btn">
+              <svg class="btn-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+              <span>Find Best Spot</span>
+            </button>
+
+            <!-- Test Reroute Trigger -->
+            <div class="reroute-demo-wrap">
+              <button id="btn-trigger-reroute" class="secondary-alert-btn" title="Simulates assigned spot getting taken mid-drive">
+                <span class="alert-status-dot"></span>
+                <span>Simulate Spot Taken (Test Reroute)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Controls Panel -->
+        <div class="panel-card" id="sim-panel">
+          <div class="panel-header">
+            <h3 class="panel-title-sm">Lot Simulation</h3>
+            <span class="panel-subtitle">Traffic flow & occupancy generator</span>
+          </div>
+          <div class="panel-body sim-body">
+            <div class="sim-btn-row">
+              <button id="btn-sim-play" class="sim-toggle-btn active" title="Play or pause traffic simulation">
+                <svg id="icon-sim-pause" class="sim-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                  <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                </svg>
+                <svg id="icon-sim-play" class="sim-icon-svg hide" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span id="text-sim-play">Simulation Active</span>
+              </button>
+
+              <button id="btn-rush-hour" class="rush-btn" title="Simulate rush hour surge to ~90% capacity">
+                <svg class="rush-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                </svg>
+                <span>Rush Hour</span>
+              </button>
+            </div>
+
+            <!-- Sim Speed Multiplier -->
+            <div class="speed-control-row">
+              <span class="sim-label">Speed:</span>
+              <div class="speed-pills">
+                <button type="button" class="speed-pill" data-speed="0.5">0.5x</button>
+                <button type="button" class="speed-pill active" data-speed="1">1.0x</button>
+                <button type="button" class="speed-pill" data-speed="2">2.0x</button>
+                <button type="button" class="speed-pill" data-speed="4">4.0x</button>
+              </div>
+            </div>
+
+            <!-- Zone Occupancy Meters -->
+            <div class="zone-meters">
+              <div class="zone-meter-item" id="meter-zone-a">
+                <div class="zone-meter-head">
+                  <span class="zone-badge badge-a">Zone A (Premium)</span>
+                  <span class="zone-count" id="count-zone-a">--/20</span>
+                </div>
+                <div class="meter-bar-track">
+                  <div class="meter-bar-fill" id="fill-zone-a" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="zone-meter-item" id="meter-zone-b">
+                <div class="zone-meter-head">
+                  <span class="zone-badge badge-b">Zone B (Central)</span>
+                  <span class="zone-count" id="count-zone-b">--/22</span>
+                </div>
+                <div class="meter-bar-track">
+                  <div class="meter-bar-fill" id="fill-zone-b" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="zone-meter-item" id="meter-zone-c">
+                <div class="zone-meter-head">
+                  <span class="zone-badge badge-c">Zone C (Express Exit)</span>
+                  <span class="zone-count" id="count-zone-c">--/20</span>
+                </div>
+                <div class="meter-bar-track">
+                  <div class="meter-bar-fill" id="fill-zone-c" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER: Parking Facility Map -->
+      <section class="map-section">
+        <div class="map-card">
+          
+          <!-- Map Status & Legend Toolbar -->
+          <div class="map-toolbar">
+            <div class="map-legend">
+              <div class="legend-item"><span class="legend-dot dot-avail"></span> Available</div>
+              <div class="legend-item"><span class="legend-dot dot-occ"></span> Occupied</div>
+              <div class="legend-item"><span class="legend-dot dot-res"></span> Reserved</div>
+              <div class="legend-item"><span class="legend-dot dot-rec"></span> Recommended</div>
+              <div class="legend-sep"></div>
+              <div class="legend-item"><span class="legend-code">EV</span> Charging</div>
+              <div class="legend-item"><span class="legend-code">ACC</span> Accessible</div>
+              <div class="legend-item"><span class="legend-code">C</span> Compact</div>
+            </div>
+
+            <!-- Route Navigation HUD -->
+            <div id="route-hud" class="route-hud-pill hide">
+              <div class="hud-status">
+                <span class="hud-active-dot"></span>
+                <span class="hud-target-text">Routing to <strong id="hud-slot-id">--</strong></span>
+              </div>
+              <div class="hud-stats-group">
+                <span class="hud-metric">Drive: <b id="hud-drive-dist">-- m</b></span>
+                <span class="hud-metric">Walk: <b id="hud-walk-dist">-- m</b></span>
+                <span class="hud-metric">ETA: <b id="hud-eta">--</b></span>
+              </div>
+              <button id="btn-cancel-route" class="hud-close-btn" title="Clear current route">✕</button>
+            </div>
+          </div>
+
+          <!-- SVG Parking Lot Viewport -->
+          <div class="svg-map-wrapper" id="map-wrapper">
+            <svg id="parking-svg" viewBox="0 0 1140 730" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <!-- Asphalt Pattern -->
+                <pattern id="asphalt-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                  <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+                </pattern>
+
+                <!-- Crosswalk Pattern -->
+                <pattern id="crosswalk-stripes" width="16" height="30" patternUnits="userSpaceOnUse">
+                  <rect x="0" y="0" width="10" height="30" fill="rgba(255, 255, 255, 0.75)"/>
+                </pattern>
+
+                <!-- Drop Shadow for Recommended Spot -->
+                <filter id="spot-focus-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0284c7" flood-opacity="0.6"/>
+                </filter>
+              </defs>
+
+              <!-- Layer 1: Ground, Curbs & Planters -->
+              <g id="layer-ground"></g>
+
+              <!-- Layer 2: Road Markings, Aisles, Crosswalks -->
+              <g id="layer-lanes"></g>
+
+              <!-- Layer 3: Parking Bays & Stalls -->
+              <g id="layer-slots"></g>
+
+              <!-- Layer 4: Parked Vehicles -->
+              <g id="layer-cars"></g>
+
+              <!-- Layer 5: Active Guidance Route -->
+              <g id="layer-routes">
+                <path id="svg-drive-path-glow" class="route-path-glow" d="" />
+                <path id="svg-drive-path" class="route-path" d="" />
+                <path id="svg-walk-path" class="route-walk-path" d="" />
+                
+                <!-- Driving Car Marker -->
+                <g id="svg-driving-car" class="driving-car-group hide">
+                  <rect x="-12" y="-6.5" width="24" height="13" rx="3.5" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
+                  <rect x="1" y="-4.5" width="5.5" height="9" rx="1.5" fill="#0f172a" />
+                  <rect x="-7" y="-4.5" width="4" height="9" rx="1" fill="#0f172a" />
+                  <circle cx="11" cy="-4" r="1.2" fill="#fef08a" />
+                  <circle cx="11" cy="4" r="1.2" fill="#fef08a" />
+                  <circle cx="-11" cy="-4" r="1.2" fill="#f43f5e" />
+                  <circle cx="-11" cy="4" r="1.2" fill="#f43f5e" />
+                </g>
+              </g>
+
+              <!-- Layer 6: Landmarks (Building Entrance, Elevator, Mall Gate, Entry/Exit) -->
+              <g id="layer-landmarks"></g>
+            </svg>
+
+            <!-- Floating Tooltip -->
+            <div id="slot-tooltip" class="slot-tooltip hide">
+              <div class="tooltip-header">
+                <span class="tooltip-id" id="tt-id">A-12</span>
+                <span class="tooltip-status-badge" id="tt-status">Available</span>
+              </div>
+              <div class="tooltip-details">
+                <div class="tt-row">
+                  <span class="tt-lbl">Type:</span>
+                  <span class="tt-val" id="tt-type">EV Charging</span>
+                </div>
+                <div class="tt-row">
+                  <span class="tt-lbl">Zone:</span>
+                  <span class="tt-val" id="tt-zone">Zone A (Premium)</span>
+                </div>
+                <div class="tt-row">
+                  <span class="tt-lbl">Walk Distance:</span>
+                  <span class="tt-val" id="tt-walk">18 m</span>
+                </div>
+                <div class="tt-row">
+                  <span class="tt-lbl">Exit Distance:</span>
+                  <span class="tt-val" id="tt-exit">95 m</span>
+                </div>
+              </div>
+              <div class="tooltip-hint">Click spot to select & route</div>
+            </div>
+          </div>
+
+          <!-- Map Footer -->
+          <div class="map-footer-bar">
+            <span class="map-tip-text">Click any available stall to set as custom destination.</span>
+            <div class="map-footer-controls">
+              <button id="btn-recenter" class="footer-action-btn">Reset View</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: Recommendation Details & Breakdown -->
+      <aside class="sidebar sidebar-right">
+        
+        <div class="panel-card" id="insights-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Spot Recommendation</h2>
+            <span class="panel-subtitle">Multi-factor evaluation result</span>
+          </div>
+
+          <div class="panel-body">
+            <!-- Top Recommendation Card -->
+            <div class="spot-hero-card" id="best-spot-card">
+              <div class="hero-top">
+                <div class="hero-slot-badge">
+                  <span class="hero-label">OPTIMAL PICK</span>
+                  <span class="hero-id" id="hero-slot-id">--</span>
+                </div>
+                <div class="hero-score-badge">
+                  <span class="score-val" id="hero-match-score">--%</span>
+                  <span class="score-lbl">MATCH RATING</span>
+                </div>
+              </div>
+
+              <div class="hero-meta">
+                <span class="hero-type-tag" id="hero-type-tag">Standard</span>
+                <span class="hero-zone-tag" id="hero-zone-tag">Zone A</span>
+              </div>
+
+              <!-- Why this spot was recommended -->
+              <div class="reasoning-box">
+                <div class="reasoning-title">
+                  <svg class="reasoning-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  </svg>
+                  Recommendation Summary
+                </div>
+                <p class="reasoning-text" id="ai-reasoning-text">
+                  Select preferences and click <strong>"Find Best Spot"</strong> to evaluate all open stalls against distance, traffic, and vehicle fit.
+                </p>
+              </div>
+
+              <!-- Score Factor Breakdown -->
+              <div class="score-breakdown">
+                <div class="breakdown-title">Factor Analysis:</div>
+
+                <!-- Factor 1: Walking Distance -->
+                <div class="breakdown-row">
+                  <div class="factor-label-wrap">
+                    <span>Walking Distance</span>
+                    <span class="factor-val" id="factor-walk-val">-- m</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill fill-blue" id="bar-walk-score" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Factor 2: Drive Distance -->
+                <div class="breakdown-row">
+                  <div class="factor-label-wrap">
+                    <span>Driving Path</span>
+                    <span class="factor-val" id="factor-drive-val">-- m</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill fill-indigo" id="bar-drive-score" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Factor 3: Zone Congestion -->
+                <div class="breakdown-row">
+                  <div class="factor-label-wrap">
+                    <span>Zone Congestion</span>
+                    <span class="factor-val" id="factor-flow-val">--</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill fill-emerald" id="bar-flow-score" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Factor 4: Exit Speed -->
+                <div class="breakdown-row">
+                  <div class="factor-label-wrap">
+                    <span>Exit Proximity</span>
+                    <span class="factor-val" id="factor-exit-val">-- m</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill fill-slate" id="bar-exit-score" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Factor 5: Vehicle Type Fit -->
+                <div class="breakdown-row">
+                  <div class="factor-label-wrap">
+                    <span>Vehicle Specification Fit</span>
+                    <span class="factor-val" id="factor-type-val">--</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill fill-teal" id="bar-type-score" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Spot Reservation Action -->
+              <div class="reservation-box">
+                <button id="btn-reserve-slot" class="reserve-btn" disabled>
+                  <svg class="btn-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span id="text-reserve-btn">Reserve Spot (10 Mins)</span>
+                </button>
+                <div id="reservation-timer" class="res-timer-badge hide">
+                  <span>Reserved for you:</span>
+                  <span class="timer-digits" id="timer-countdown">10:00</span>
+                  <button id="btn-cancel-reservation" class="cancel-res-btn">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alternative Options -->
+            <div class="alternatives-section">
+              <div class="alt-header">
+                <span class="alt-title">Alternative Options</span>
+                <span class="alt-sub">Click to route</span>
+              </div>
+              <div class="alt-cards-grid" id="alt-cards-list">
+                <div class="empty-alt-placeholder">Run spot search to view runner-up options.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <!-- System Toast Alerts -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
